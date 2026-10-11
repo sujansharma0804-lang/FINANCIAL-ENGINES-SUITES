@@ -98,16 +98,21 @@ with tab5:
     
     if st.button("Run Simulation"):
         np.random.seed(42)
-        simulated_values = np.random.normal(base_dcf, base_dcf * volatility, simulations)
+       # Execute the advanced stochastic simulation engine
+        ev_array, sim_data, p10, p50, p90 = run_monte_carlo_simulation_advanced(
+            iterations=10000, 
+            base_fcf=base_dcf, 
+            volatility=volatility
+        )
         
-        fig, ax = plt.subplots(figsize=(10, 4))
-        sns.histplot(simulated_values, kde=True, ax=ax, color="skyblue")
-        ax.axvline(base_dcf, color="red", linestyle="--", label=f"Base Case (${base_dcf})")
-        ax.set_title("Monte Carlo Valuation Distribution")
-        ax.set_xlabel("Implied Share Price ($)")
-        ax.legend()
+        # Display professional institutional metric cards
+        col1, col2, col3 = st.columns(3)
+        col1.metric("P10 Bear Case", f"${p10:,.2f}M")
+        col2.metric("P50 Median Valuation", f"${p50:,.2f}M")
+        col3.metric("P90 Bull Case", f"${p90:,.2f}M")
+        
+        # Render the 3-panel institutional layout
+        fig = plot_advanced_monte_carlo_charts(ev_array, sim_data, p10, p50, p90, base_target=base_dcf)
         st.pyplot(fig)
         
-        st.write(f"*Mean Share Price:* ${np.mean(simulated_values):,.2f}")
-        st.write(f"*5th Percentile Value (VaR):* ${np.percentile(simulated_values, 5):,.2f}")
-        st.write(f"*95th Percentile Value:* ${np.percentile(simulated_values, 95):,.2f}")
+        
