@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from esg_engine import plot_institutional_esg_dashboard
 from monte_carlo import run_monte_carlo_simulation_advanced
 
 st.set_page_config(
