@@ -1,13 +1,12 @@
-from monte_carlo import run_monte_carlo_simulation_advanced
+import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+from esg_engine import plot_institutional_esg_dashboard
+from monte_carlo import run_monte_carlo_simulation_advanced
 
-# Set page configuration
 st.set_page_config(
     page_title="Institutional Financial Analytics Suite",
-    page_icon="📈",
+    page_icon="📊",
     layout="wide"
 )
 
