@@ -72,12 +72,11 @@ with tab1:
                                 f_data = f_resp.json()
                                 us_gaap = f_data.get("facts", {}).get("us-gaap", {})
                                 
-                                # Multi-tag fallback extraction for Revenue and Total Assets
                                 latest_rev, latest_assets = 0.0, 0.0
                                 for tag in ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "InterestAndDividendIncomeOperating"]:
                                     if tag in us_gaap:
                                         units = us_gaap[tag].get("units", {}).get("USD", [])
-                                        annuals = [e.get("val", 0) for e in units if e.get("form") == "10-K"]
+                                        annuals = [e.get("val", 0) for e in units if e.get("form"] == "10-K"]
                                         if annuals:
                                             latest_rev = round(annuals[-1] / 1e6, 2)
                                             break
@@ -216,7 +215,7 @@ with tab3:
         st.pyplot(fig_p3)
 
 # ==========================================
-# PILLAR 4: ELITE ESG & CLIMATE ENGINE
+# PILLAR 4: ELITE ESG & CLIMATE ENGINE (WITH 3 SOPHISTICATED GRAPHS)
 # ==========================================
 with tab4:
     st.subheader("Pillar 4: Elite ESG Risk, DCF Valuation Impact & Carbon Transition Engine")
@@ -250,6 +249,7 @@ with tab4:
     b1 = ax_e1.barh(pillars, scores, color=["#2ca02c", "#1f77b4", "#ff7f0e", "#9467bd"], height=0.55)
     ax_e1.set_xlim(0, 100)
     ax_e1.set_xlabel("Score (0-100 Scale)", fontsize=9)
+    ax_e1.set_title("Institutional ESG Pillar Evaluation & Weighting", fontsize=11, fontweight='bold')
     for bar in b1:
         w = bar.get_width()
         ax_e1.annotate(f'{w:.1f}', xy=(w + 1, bar.get_y() + bar.get_height()/2), va='center', fontsize=9, fontweight='bold')
@@ -265,6 +265,7 @@ with tab4:
     cur_pen = 0.045 * np.log(cur_em) * 100
     ax_e2.axvline(cur_em, color='orange', linestyle='--', linewidth=2, label=f'Baseline ({cur_em} kt)')
     ax_e2.scatter([cur_em], [cur_pen], color='orange', s=80, zorder=5)
+    ax_e2.set_title("Carbon Intensity vs. Cost of Capital Penalty", fontsize=11, fontweight='bold')
     ax_e2.set_xlabel("Scope 1 & 2 Emissions (kt CO2e)", fontsize=9)
     ax_e2.set_ylabel("WACC Adjustment (bps)", fontsize=9)
     ax_e2.legend(loc='upper left')
@@ -282,6 +283,7 @@ with tab4:
     ax_e3_twin = ax_e3.twinx()
     ax_e3_twin.plot(years, eps_dilution, color="#d62728", marker="o", linewidth=2.5, linestyle="--", label="Projected EPS Dilution (%)")
     ax_e3_twin.set_ylabel("Cumulative EPS Impact (%)", color="#d62728", fontsize=10)
+    ax_e3.set_title("Multi-Year Carbon Tax Escalation & Earnings Dilution Stress Test", fontsize=11, fontweight='bold')
     ax_e3.set_xlabel("Forecast Year", fontsize=10)
     plt.tight_layout()
     st.pyplot(fig_e3)
