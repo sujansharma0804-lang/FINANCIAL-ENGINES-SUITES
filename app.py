@@ -77,7 +77,7 @@ with tab1:
                                 for tag in ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "InterestAndDividendIncomeOperating"]:
                                     if tag in us_gaap:
                                         units = us_gaap[tag].get("units", {}).get("USD", [])
-                                        annuals = [e.get("val", 0) for e in units if e.get("form") == "10-K"]
+                                        annuals = [e.get("val", 0) for e in units if e.get("form"] == "10-K"]
                                         if annuals:
                                             latest_rev = round(annuals[-1] / 1e6, 2)
                                             break
@@ -203,7 +203,7 @@ with tab2:
         materiality = [2.5, 5.0, 1.2, 8.5, 3.1]
         recurrence_risk = [1.0, 4.0, 2.5, 8.0, 3.0]
         adj_labels = ["Severance", "Litigation", "Lease Adj", "Bad Debt", "FX Revaluation"]
-        ax6.scatter(recurrence_risk, materiality, s=250, color="#d62728", alpha=0.7, edgecodes="black")
+        ax6.scatter(recurrence_risk, materiality, s=250, color="#d62728", alpha=0.7, edgecolors="black")
         for i, txt in enumerate(adj_labels):
             ax6.annotate(txt, (recurrence_risk[i]+0.2, materiality[i]), fontsize=9, fontweight='bold')
         ax6.axvline(5.0, color='orange', linestyle='--', linewidth=1.5, label='High Recurrence Risk')
@@ -328,7 +328,7 @@ with tab4:
         exposure = [0.8, 0.4, 0.9, 0.2, 0.7]
         sensitivity = [0.7, 0.3, 0.8, 0.1, 0.6]
         sectors = ["Scope 1 Emissions", "Physical Assets", "Supply Chain", "Water Stress", "Regulatory Tax"]
-        ax11.scatter(exposure, sensitivity, s=300, color="#ff7f0e", alpha=0.7, edgecodes="black")
+        ax11.scatter(exposure, sensitivity, s=300, color="#ff7f0e", alpha=0.7, edgecolors="black")
         for i, txt in enumerate(sectors):
             ax11.annotate(txt, (exposure[i]+0.02, sensitivity[i]), fontsize=9, fontweight='bold')
         ax11.axvline(0.5, color='grey', linestyle='--', linewidth=1)
