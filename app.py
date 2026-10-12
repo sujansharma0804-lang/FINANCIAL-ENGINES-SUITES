@@ -77,7 +77,6 @@ with tab1:
                                 for tag in ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "InterestAndDividendIncomeOperating"]:
                                     if tag in us_gaap:
                                         units = us_gaap[tag].get("units", {}).get("USD", [])
-                                        # Fixed bracket parenthesis bug here:
                                         annuals = [e.get("val", 0) for e in units if e.get("form") == "10-K"]
                                         if annuals:
                                             latest_rev = round(annuals[-1] / 1e6, 2)
@@ -99,7 +98,6 @@ with tab1:
         # Graph 1: Peer Valuation Frontier
         st.write(f"### 1. Peer Valuation Frontier ({target_ticker} vs Peers)")
         fig1, ax1 = plt.subplots(figsize=(10, 4))
-        np.random.seed(42)
         rotce = np.random.uniform(8, 25, 10)
         ptbv = 0.12 * rotce + np.random.normal(1.2, 0.3, 10)
         mkt_cap = np.random.uniform(30, 250, 10)
@@ -115,8 +113,8 @@ with tab1:
         st.write(f"### 2. Financial Performance Timeline ({target_ticker})")
         fig2, ax2 = plt.subplots(figsize=(10, 4))
         quarters = ["Q1 24", "Q2 24", "Q3 24", "Q4 24", "Q1 25", "Q2 25", "Q3 25", "Q4 25"]
-        revenue = [22.4, 23.8, 24.1, 26.5, 27.2, 28.5, 29.1, 31.0]
-        net_income = [4.2, 4.5, 4.8, 5.2, 5.5, 5.9, 6.1, 6.8]
+        revenue = [22.4 + np.random.normal(0, 1) for _ in range(8)]
+        net_income = [4.2 + np.random.normal(0, 0.4) for _ in range(8)]
         ax2.plot(quarters, revenue, marker="o", color="#1f77b4", linewidth=2.5, label="Revenue ($B)")
         ax2.plot(quarters, net_income, marker="s", color="#2ca02c", linewidth=2.5, label="Net Income ($B)")
         ax2.set_title(f"Multi-Period Financial Performance & Trajectory ({target_ticker})", fontsize=11, fontweight='bold')
@@ -182,9 +180,9 @@ with tab2:
         st.write("### 5. Earnings-to-Cash Conversion Chart")
         fig5, ax5 = plt.subplots(figsize=(10, 4))
         periods = ["FY22", "FY23", "FY24", "FY25", "LTM"]
-        ebitda_s = [15000, 16500, 17800, rep_ebitda, norm_ebitda]
-        ocf_s = [12500, 14200, 15600, 16100, 16800]
-        fcf_s = [9800, 11000, 12200, 13000, 13700]
+        ebitda_s = [15000 + np.random.normal(0, 200), 16500, 17800, rep_ebitda, norm_ebitda]
+        ocf_s = [12500 + np.random.normal(0, 150), 14200, 15600, 16100, 16800]
+        fcf_s = [9800 + np.random.normal(0, 100), 11000, 12200, 13000, 13700]
         x_idx = np.arange(len(periods))
         width = 0.25
         ax5.bar(x_idx - width, ebitda_s, width, label="EBITDA", color="#1f77b4")
@@ -201,8 +199,8 @@ with tab2:
         # Graph 6: Adjustment-Risk Matrix
         st.write("### 6. QoE Adjustment-Risk Matrix")
         fig6, ax6 = plt.subplots(figsize=(8, 4))
-        materiality = [2.5, 5.0, 1.2, 8.5, 3.1]
-        recurrence_risk = [1.0, 4.0, 2.5, 8.0, 3.0]
+        materiality = [np.random.uniform(2, 9) for _ in range(5)]
+        recurrence_risk = [np.random.uniform(1, 8) for _ in range(5)]
         adj_labels = ["Severance", "Litigation", "Lease Adj", "Bad Debt", "FX Revaluation"]
         ax6.scatter(recurrence_risk, materiality, s=250, color="#d62728", alpha=0.7, edgecolors="black")
         for i, txt in enumerate(adj_labels):
@@ -261,7 +259,7 @@ with tab3:
         wacc_vals = ["8.0%", "8.5%", "9.0%", "9.5%", "10.0%"]
         g_vals = ["1.5%", "2.0%", "2.5%", "3.0%"]
         sens_matrix = pd.DataFrame(
-            [[165, 158, 150, 142], [152, 146, 139, 132], [141, 135, 128, 122], [130, 124, 118, 113], [120, 115, 109, 104]],
+            [[np.random.randint(155, 175), np.random.randint(150, 168), np.random.randint(145, 160), np.random.randint(138, 152)] for _ in range(5)],
             index=wacc_vals, columns=g_vals
         )
         sns.heatmap(sens_matrix, annot=True, cmap="YlGnBu", fmt="d", ax=ax8, cbar_kws={'label': 'Implied Share Price ($)'})
@@ -311,9 +309,9 @@ with tab4:
         st.write("### 10. Climate Transition Scenario Fan Chart")
         fig10, ax10 = plt.subplots(figsize=(10, 4))
         years = [2026, 2027, 2028, 2029, 2030]
-        baseline = [100, 108, 117, 127, 138]
+        baseline = [100, 108 + np.random.normal(0, 2), 117, 127, 138]
         orderly = [100, 105, 111, 118, 125]
-        disorderly = [100, 98, 92, 85, 78]
+        disorderly = [100, 98, 92, 85, 78 + np.random.normal(0, 3)]
         ax10.plot(years, baseline, marker="o", color="#2ca02c", linewidth=2.5, label="Baseline (No Carbon Shock)")
         ax10.plot(years, orderly, marker="s", color="#1f77b4", linewidth=2.5, label="Orderly Transition ($50–$100/ton)")
         ax10.plot(years, disorderly, marker="^", color="#d62728", linewidth=2.5, label="Disorderly Transition (Abrupt Shock)")
@@ -326,8 +324,8 @@ with tab4:
         # Graph 11: Climate Materiality Heatmap
         st.write("### 11. Climate Materiality Heatmap")
         fig11, ax11 = plt.subplots(figsize=(8, 3.5))
-        exposure = [0.8, 0.4, 0.9, 0.2, 0.7]
-        sensitivity = [0.7, 0.3, 0.8, 0.1, 0.6]
+        exposure = [np.random.uniform(0.2, 0.9) for _ in range(5)]
+        sensitivity = [np.random.uniform(0.1, 0.8) for _ in range(5)]
         sectors = ["Scope 1 Emissions", "Physical Assets", "Supply Chain", "Water Stress", "Regulatory Tax"]
         ax11.scatter(exposure, sensitivity, s=300, color="#ff7f0e", alpha=0.7, edgecolors="black")
         for i, txt in enumerate(sectors):
@@ -375,8 +373,7 @@ with tab5:
         vol_factor = st.slider("Valuation Volatility (%):", min_value=5.0, max_value=35.0, value=18.0, step=0.5, key="p5_vol")
 
     if st.button("Run Comprehensive Risk & Monte Carlo Suite", key="btn_p5"):
-        with st.spinner("Executing all 4 risk models and generating graphs 13–16..."):
-            np.random.seed(42)
+        with st.spinner("Executing dynamic risk models & generating graphs 13–16..."):
             base_ev = 145000.0
             std_dev = base_ev * (vol_factor / 100.0)
             ev_array = np.random.normal(base_ev, std_dev, num_iter)
@@ -391,7 +388,7 @@ with tab5:
             st.write("### 13. Monte Carlo Fan Chart (Percentile Path Projections)")
             fig13, ax13 = plt.subplots(figsize=(10, 4))
             years = [2026, 2027, 2028, 2029, 2030]
-            np.random.seed(100)
+            
             paths = np.zeros((100, len(years)))
             paths[:, 0] = base_ev
             for i in range(1, len(years)):
@@ -440,30 +437,4 @@ with tab5:
                     patch.set_facecolor('#d62728')
                     patch.set_alpha(0.8)
             ax15.axvline(var_95, color='darkred', linestyle='--', linewidth=2.5, label=f'95% VaR Threshold (${var_95:,.0f}M)')
-            ax15.axvline(cvar_95, color='purple', linestyle=':', linewidth=2.5, label=f'Expected Shortfall / CVaR (${cvar_95:,.0f}M)')
-            ax15.axvline(base_ev, color='green', linestyle='-', linewidth=2, label=f'Base Case (${base_ev:,.0f}M)')
-            ax15.set_title("Institutional Value-at-Risk (VaR) & Expected Shortfall Tail Distribution", fontsize=11, fontweight='bold')
-            ax15.set_xlabel("Enterprise Value ($ Millions)", fontsize=9)
-            ax15.legend(loc='upper right', fontsize=8)
-            plt.tight_layout()
-            st.pyplot(fig15)
-
-            # -------------------------------------------------------------
-            # 16. RISK-DRIVER TORNADO CHART
-            # -------------------------------------------------------------
-            st.write("### 16. Risk-Driver Tornado Sensitivity Chart")
-            fig16, ax16 = plt.subplots(figsize=(10, 3.8))
-            drivers = ["Exit Multiple (+/- 2x)", "WACC Spread (+/- 100bps)", "Revenue Growth (+/- 2%)", "EBITDA Margin (+/- 3%)", "Inflation / Cost Shock"]
-            low_imp = [-18000, -14000, -11000, -8500, -5000]
-            high_imp = [22000, 16000, 13000, 9500, 6000]
-            y_pos = np.arange(len(drivers))
-            ax16.barh(y_pos, low_imp, color='#d62728', alpha=0.7, label='Downside Impact (-)')
-            ax16.barh(y_pos, high_imp, color='#2ca02c', alpha=0.7, label='Upside Impact (+)')
-            ax16.set_yticks(y_pos)
-            ax16.set_yticklabels(drivers, fontsize=9)
-            ax16.axvline(0, color='black', linewidth=1)
-            ax16.set_title("Valuation Sensitivity Risk-Driver Tornado Ranking", fontsize=11, fontweight='bold')
-            ax16.set_xlabel("Valuation Delta ($ Millions)", fontsize=9)
-            ax16.legend(loc='lower right', fontsize=8)
-            plt.tight_layout()
-            st.pyplot(fig16)
+            ax15.axvline(cvar_95, color='purple', linestyle=':', linewidth=2.5, label=f'Expected Shortfall / CVaR (${c
