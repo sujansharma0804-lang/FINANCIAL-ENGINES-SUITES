@@ -437,4 +437,30 @@ with tab5:
                     patch.set_facecolor('#d62728')
                     patch.set_alpha(0.8)
             ax15.axvline(var_95, color='darkred', linestyle='--', linewidth=2.5, label=f'95% VaR Threshold (${var_95:,.0f}M)')
-            ax15.axvline(cvar_95, color='purple', linestyle=':', linewidth=2.5, label=f'Expected Shortfall / CVaR (${c
+            ax15.axvline(cvar_95, color='purple', linestyle=':', linewidth=2.5, label=f'Expected Shortfall / CVaR (${cvar_95:,.0f}M)')
+            ax15.axvline(base_ev, color='green', linestyle='-', linewidth=2, label=f'Base Case (${base_ev:,.0f}M)')
+            ax15.set_title("Institutional Value-at-Risk (VaR) & Expected Shortfall Tail Distribution", fontsize=11, fontweight='bold')
+            ax15.set_xlabel("Enterprise Value ($ Millions)", fontsize=9)
+            ax15.legend(loc='upper right', fontsize=8)
+            plt.tight_layout()
+            st.pyplot(fig15)
+
+            # -------------------------------------------------------------
+            # 16. RISK-DRIVER TORNADO CHART
+            # -------------------------------------------------------------
+            st.write("### 16. Risk-Driver Tornado Sensitivity Chart")
+            fig16, ax16 = plt.subplots(figsize=(10, 3.8))
+            drivers = ["Exit Multiple (+/- 2x)", "WACC Spread (+/- 100bps)", "Revenue Growth (+/- 2%)", "EBITDA Margin (+/- 3%)", "Inflation / Cost Shock"]
+            low_imp = [-18000, -14000, -11000, -8500, -5000]
+            high_imp = [22000, 16000, 13000, 9500, 6000]
+            y_pos = np.arange(len(drivers))
+            ax16.barh(y_pos, low_imp, color='#d62728', alpha=0.7, label='Downside Impact (-)')
+            ax16.barh(y_pos, high_imp, color='#2ca02c', alpha=0.7, label='Upside Impact (+)')
+            ax16.set_yticks(y_pos)
+            ax16.set_yticklabels(drivers, fontsize=9)
+            ax16.axvline(0, color='black', linewidth=1)
+            ax16.set_title("Valuation Sensitivity Risk-Driver Tornado Ranking", fontsize=11, fontweight='bold')
+            ax16.set_xlabel("Valuation Delta ($ Millions)", fontsize=9)
+            ax16.legend(loc='lower right', fontsize=8)
+            plt.tight_layout()
+            st.pyplot(fig16)
