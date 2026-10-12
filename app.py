@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
-import yfinance as yf
 
 # Page Configuration
 st.set_page_config(
@@ -18,11 +17,11 @@ plt.style.use('seaborn-v0_8-darkgrid' if 'seaborn-v0_8-darkgrid' in plt.style.av
 
 # App Title & Header
 st.title("Institutional Financial Analytics Suite")
-st.markdown("### Universal Global Workspace: US SEC EDGAR & Indian NSE/BSE Markets, LTM Walk, EV Bridge, Elite ESG Analytics, and Stochastic Monte Carlo")
+st.markdown("### Universal Multi-Engine Workspace: SEC Statements, LTM Walk, EV Bridge, Elite ESG Analytics, and Stochastic Monte Carlo")
 
-# Navigation Tabs (All 5 with Sophisticated Graphs)
+# Navigation Tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🌍 Global Markets Pipeline", 
+    "🔍 SEC EDGAR Pipeline", 
     "📅 LTM Calendarizer", 
     "🌉 EV Bridge Model", 
     "🌱 Elite ESG Engine", 
@@ -30,122 +29,81 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 ])
 
 # ==========================================
-# TAB 1: GLOBAL MARKETS PIPELINE (US SEC + INDIAN NSE/BSE)
+# TAB 1: SEC EDGAR PIPELINE
 # ==========================================
 with tab1:
-    st.subheader("Global Financial Statement Ingestion & Visualizer")
-    st.write("Query official regulatory filings and market fundamentals across *US SEC EDGAR* (XBRL) and *Indian Exchanges (NSE/BSE via Yahoo Finance)*.")
+    st.subheader("Universal SEC EDGAR Financial Statement Ingestion & Visualizer")
+    st.write("Query official XBRL filings for *any US-listed company or ADR* (e.g., GS, AAPL, MSFT, TSLA, INFY) to plot historical Revenue and Total Assets.")
 
-    market_choice = st.radio("Select Target Market Region:", ["US SEC EDGAR (US & Global ADRs)", "Indian Market (NSE / BSE)"], horizontal=True)
+    ticker_input = st.text_input("Enter US Ticker Symbol:", value="GS", key="sec_ticker").upper().strip()
 
-    if market_choice == "US SEC EDGAR (US & Global ADRs)":
-        ticker_input = st.text_input("Enter US Ticker Symbol (e.g., GS, AAPL, MSFT, INFY):", value="GS", key="sec_ticker").upper().strip()
-
-        if st.button("Fetch Live US SEC Financials", key="btn_sec_universal"):
-            with st.spinner(f"Resolving CIK and querying SEC EDGAR API for {ticker_input}..."):
-                try:
-                    headers = {'User-Agent': 'InstitutionalFinancialAnalytics student@christuniversity.in'}
-                    tickers_url = "https://www.sec.gov/files/company_tickers.json"
-                    tickers_resp = requests.get(tickers_url, headers=headers, timeout=10)
+    if st.button("Fetch Live SEC Data & Render Graphs", key="btn_sec_universal"):
+        with st.spinner(f"Resolving CIK and querying SEC EDGAR API for {ticker_input}..."):
+            try:
+                headers = {'User-Agent': 'InstitutionalFinancialAnalytics student@christuniversity.in'}
+                tickers_url = "https://www.sec.gov/files/company_tickers.json"
+                tickers_resp = requests.get(tickers_url, headers=headers, timeout=10)
+                
+                if tickers_resp.status_code == 200:
+                    tickers_data = tickers_resp.json()
+                    target_cik, target_name = None, None
                     
-                    if tickers_resp.status_code == 200:
-                        tickers_data = tickers_resp.json()
-                        target_cik, target_name = None, None
+                    for key, val in tickers_data.items():
+                        if val.get("ticker") == ticker_input:
+                            target_cik = str(val.get("cik_str")).zfill(10)
+                            target_name = val.get("title")
+                            break
+                    
+                    if target_cik:
+                        st.success(f"Found *{target_name}* (CIK: {target_cik}). Parsing financial statements...")
+                        facts_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{target_cik}.json"
+                        facts_resp = requests.get(facts_url, headers=headers, timeout=15)
                         
-                        for key, val in tickers_data.items():
-                            if val.get("ticker") == ticker_input:
-                                target_cik = str(val.get("cik_str")).zfill(10)
-                                target_name = val.get("title")
-                                break
-                        
-                        if target_cik:
-                            st.success(f"Found *{target_name}* (CIK: {target_cik}). Parsing financial statements...")
-                            facts_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{target_cik}.json"
-                            facts_resp = requests.get(facts_url, headers=headers, timeout=15)
+                        if facts_resp.status_code == 200:
+                            data = facts_resp.json()
+                            us_gaap = data.get("facts", {}).get("us-gaap", {})
                             
-                            if facts_resp.status_code == 200:
-                                data = facts_resp.json()
-                                us_gaap = data.get("facts", {}).get("us-gaap", {})
-                                
-                                def extract_sec_metric(tags_list, metric_name):
-                                    rows = []
-                                    for tag in tags_list:
-                                        if tag in us_gaap:
-                                            units = us_gaap[tag].get("units", {}).get("USD", [])
-                                            for entry in units:
-                                                if entry.get("form") in ["10-K"] and "fy" in entry:
-                                                    rows.append({
-                                                        "Metric": metric_name,
-                                                        "Fiscal Year": int(entry.get("fy")),
-                                                        "Value ($M)": round(entry.get("val", 0) / 1e6, 2)
-                                                    })
-                                    return rows
+                            def extract_sec_metric(tags_list, metric_name):
+                                rows = []
+                                for tag in tags_list:
+                                    if tag in us_gaap:
+                                        units = us_gaap[tag].get("units", {}).get("USD", [])
+                                        for entry in units:
+                                            if entry.get("form") in ["10-K"] and "fy" in entry:
+                                                rows.append({
+                                                    "Metric": metric_name,
+                                                    "Fiscal Year": int(entry.get("fy")),
+                                                    "Value ($M)": round(entry.get("val", 0) / 1e6, 2)
+                                                })
+                                return rows
 
-                                rev_rows = extract_sec_metric(["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "InterestAndDividendIncomeOperating"], "Revenue")
-                                assets_rows = extract_sec_metric(["Assets"], "Total Assets")
+                            rev_rows = extract_sec_metric(["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "InterestAndDividendIncomeOperating"], "Revenue")
+                            assets_rows = extract_sec_metric(["Assets"], "Total Assets")
+                            
+                            df_plot = pd.DataFrame(rev_rows + assets_rows).drop_duplicates(subset=["Metric", "Fiscal Year"]).sort_values("Fiscal Year")
+                            
+                            if not df_plot.empty:
+                                st.write(f"### Historical Financial Performance: {target_name}")
+                                fig_sec, ax_sec = plt.subplots(figsize=(10, 4.5))
+                                sns.lineplot(data=df_plot, x="Fiscal Year", y="Value ($M)", hue="Metric", marker="o", linewidth=2.5, ax=ax_sec)
+                                ax_sec.set_title(f"Annual Financial Trajectory ({target_name})", fontsize=11, fontweight='bold')
+                                ax_sec.set_xlabel("Fiscal Year", fontsize=10)
+                                ax_sec.set_ylabel("USD ($ Millions)", fontsize=10)
+                                ax_sec.legend(title="Financial Metric")
+                                plt.tight_layout()
+                                st.pyplot(fig_sec)
                                 
-                                df_plot = pd.DataFrame(rev_rows + assets_rows).drop_duplicates(subset=["Metric", "Fiscal Year"]).sort_values("Fiscal Year")
-                                
-                                if not df_plot.empty:
-                                    st.write(f"### Historical Financial Performance: {target_name}")
-                                    fig_sec, ax_sec = plt.subplots(figsize=(10, 4.5))
-                                    sns.lineplot(data=df_plot, x="Fiscal Year", y="Value ($M)", hue="Metric", marker="o", linewidth=2.5, ax=ax_sec)
-                                    ax_sec.set_title(f"Annual Financial Trajectory ({target_name})", fontsize=11, fontweight='bold')
-                                    ax_sec.set_xlabel("Fiscal Year", fontsize=10)
-                                    ax_sec.set_ylabel("USD ($ Millions)", fontsize=10)
-                                    ax_sec.legend(title="Financial Metric")
-                                    plt.tight_layout()
-                                    st.pyplot(fig_sec)
-                                    
-                                    st.dataframe(df_plot.pivot(index="Fiscal Year", columns="Metric", values="Value ($M)").sort_index(ascending=False), use_container_width=True)
-                                else:
-                                    st.warning("Standard annual tags not fully matched for charting.")
+                                st.dataframe(df_plot.pivot(index="Fiscal Year", columns="Metric", values="Value ($M)").sort_index(ascending=False), use_container_width=True)
                             else:
-                                st.error("Failed to retrieve company facts JSON.")
+                                st.warning("Standard annual tags not fully matched for charting.")
                         else:
-                            st.error(f"Ticker '{ticker_input}' not found in SEC database.")
+                            st.error("Failed to retrieve company facts JSON.")
                     else:
-                        st.error("Failed to connect to SEC ticker directory.")
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
-
-    else:
-        indian_ticker = st.text_input("Enter NSE/BSE Ticker Symbol (e.g., RELIANCE.NS, TCS.NS, INFY.NS, HDFCBANK.NS):", value="RELIANCE.NS").upper().strip()
-
-        if st.button("Fetch Indian Market Financials", key="btn_indian_market"):
-            with st.spinner(f"Fetching financial statements for {indian_ticker}..."):
-                try:
-                    stock = yf.Ticker(indian_ticker)
-                    fin = stock.financials
-                    
-                    if not fin.empty:
-                        st.success(f"Successfully retrieved financial statements for *{indian_ticker}*!")
-                        
-                        # Transpose for easier reading (Columns as metrics, rows as years)
-                        df_transposed = fin.T.reset_index()
-                        df_transposed.rename(columns={'index': 'Fiscal Year End'}, inplace=True)
-                        
-                        st.write(f"### Financial Statement Summary: {indian_ticker}")
-                        st.dataframe(df_transposed.head(5), use_container_width=True)
-                        
-                        # Try plotting Total Revenue if present
-                        if 'Total Revenue' in fin.index:
-                            rev_series = fin.loc['Total Revenue'].dropna().sort_index()
-                            
-                            fig_in, ax_in = plt.subplots(figsize=(10, 4))
-                            ax_in.plot(rev_series.index.astype(str), rev_series.values / 1e7, marker="o", color="#1f77b4", linewidth=2.5)
-                            ax_in.set_title(f"Annual Total Revenue Trend ({indian_ticker})", fontsize=11, fontweight='bold')
-                            ax_in.set_xlabel("Filing Date", fontsize=10)
-                            ax_in.set_ylabel("Revenue (₹ Crores)", fontsize=10)
-                            plt.xticks(rotation=45)
-                            plt.tight_layout()
-                            st.pyplot(fig_in)
-                        else:
-                            st.info("Revenue timeline row not directly indexed under standard Yahoo Finance keys. Displaying raw financial table above.")
-                    else:
-                        st.error("No financial records found for this ticker symbol. Verify suffix (.NS for NSE, .BO for BSE).")
-                except Exception as e:
-                    st.error(f"Error fetching data from Yahoo Finance: {e}")
+                        st.error(f"Ticker '{ticker_input}' not found in SEC database.")
+                else:
+                    st.error("Failed to connect to SEC ticker directory.")
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
 
 # ==========================================
 # TAB 2: LTM CALENDARIZER
@@ -230,7 +188,7 @@ with tab3:
         st.pyplot(fig_bridge)
 
 # ==========================================
-# TAB 4: ELITE ESG & CLIMATE ENGINE (WITH 3 SOPHISTICATED ESG GRAPHS)
+# TAB 4: ELITE ESG & CLIMATE ENGINE
 # ==========================================
 with tab4:
     st.subheader("Elite ESG Risk, DCF Valuation Impact & Carbon Transition Engine")
