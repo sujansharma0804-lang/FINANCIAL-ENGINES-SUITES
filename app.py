@@ -77,7 +77,8 @@ with tab1:
                                 for tag in ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "InterestAndDividendIncomeOperating"]:
                                     if tag in us_gaap:
                                         units = us_gaap[tag].get("units", {}).get("USD", [])
-                                        annuals = [e.get("val", 0) for e in units if e.get("form"] == "10-K"]
+                                        # Fixed bracket parenthesis bug here:
+                                        annuals = [e.get("val", 0) for e in units if e.get("form") == "10-K"]
                                         if annuals:
                                             latest_rev = round(annuals[-1] / 1e6, 2)
                                             break
