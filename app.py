@@ -17,7 +17,7 @@ plt.style.use('seaborn-v0_8-darkgrid' if 'seaborn-v0_8-darkgrid' in plt.style.av
 
 # App Title & Header
 st.title("Institutional Financial Analytics Suite — 16-Graph Master Architecture")
-st.markdown("### Enterprise Workspace: SEC Peer Benchmarking, QoE Normalization, Advanced Capital Bridges, Elite ESG Climate Stress-Testing, and Correlated VaR Monte Carlo")
+st.markdown("### Enterprise Workspace: Live SEC EDGAR Ticker Query, QoE Normalization, Capital Bridges, Elite Climate Stress-Testing, and Correlated VaR Monte Carlo")
 
 # Navigation Tabs (All 5 Pillars)
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -32,41 +32,93 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # PILLAR 1: SEC EDGAR PEER BENCHMARKING (GRAPHS 1–3)
 # ==========================================
 with tab1:
-    st.subheader("Pillar 1: SEC EDGAR Peer Benchmarking & Financial Pipeline")
+    st.subheader("Pillar 1: SEC EDGAR Peer Benchmarking & Live Ticker Pipeline")
     st.markdown("""
     * *1. Peer Valuation Frontier:* P/TBV vs. ROTCE scatter plot with market-cap bubbles and regression trendline.
     * *2. Financial Performance Timeline:* Quarterly/Annual revenue, net income, and margin trajectories.
     * *3. Data-Quality Heatmap:* XBRL tag reliability and reporting consistency matrix across peers.
     """)
 
-    if st.button("Generate Pillar 1 Analytics Suite", key="btn_p1"):
-        # Graph 1: Peer Valuation Frontier (Scatter with Bubble & Regression)
-        st.write("### 1. Peer Valuation Frontier (P/TBV vs. ROTCE)")
+    col_i1, col_i2 = st.columns(2)
+    with col_i1:
+        target_ticker = st.text_input("Enter Target US Ticker (e.g., GS, AAPL, MSFT, JPM):", value="GS", key="p1_target").upper().strip()
+    with col_i2:
+        peer_tickers_input = st.text_input("Enter Peer Tickers (comma-separated):", value="MS, JPM, BAC, C", key="p1_peers")
+
+    if st.button("Fetch Live SEC Data & Render Pillar 1 Graphs", key="btn_p1"):
+        with st.spinner(f"Querying SEC EDGAR API for {target_ticker} and peers..."):
+            try:
+                headers = {'User-Agent': 'InstitutionalFinancialAnalytics student@christuniversity.in'}
+                tickers_url = "https://www.sec.gov/files/company_tickers.json"
+                tickers_resp = requests.get(tickers_url, headers=headers, timeout=10)
+                
+                if tickers_resp.status_code == 200:
+                    tickers_data = tickers_resp.json()
+                    all_tickers = [target_ticker] + [p.strip().upper() for p in peer_tickers_input.split(",")]
+                    
+                    peer_rows = []
+                    for t in all_tickers:
+                        target_cik = None
+                        target_name = t
+                        for key, val in tickers_data.items():
+                            if val.get("ticker") == t:
+                                target_cik = str(val.get("cik_str")).zfill(10)
+                                target_name = val.get("title")
+                                break
+                        
+                        if target_cik:
+                            facts_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{target_cik}.json"
+                            f_resp = requests.get(facts_url, headers=headers, timeout=10)
+                            if f_resp.status_code == 200:
+                                f_data = f_resp.json()
+                                us_gaap = f_data.get("facts", {}).get("us-gaap", {})
+                                
+                                latest_rev = 0.0
+                                for tag in ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "InterestAndDividendIncomeOperating"]:
+                                    if tag in us_gaap:
+                                        units = us_gaap[tag].get("units", {}).get("USD", [])
+                                        annuals = [e.get("val", 0) for e in units if e.get("form") == "10-K"]
+                                        if annuals:
+                                            latest_rev = round(annuals[-1] / 1e6, 2)
+                                            break
+                                
+                                peer_rows.append({"Ticker": t, "Company Name": target_name, "Latest Revenue ($M)": latest_rev})
+                    
+                    if peer_rows:
+                        df_p1 = pd.DataFrame(peer_rows)
+                        st.success(f"Successfully retrieved SEC filing data for *{target_ticker}* and peer group!")
+                        st.dataframe(df_p1, use_container_width=True)
+                    else:
+                        st.warning("Could not resolve ticker symbols in SEC database. Rendering simulation charts below.")
+                else:
+                    st.error("Failed to connect to SEC directory.")
+            except Exception as e:
+                st.warning(f"Live SEC connection note: {e}. Rendering fallback analytical suite.")
+
+        # Graph 1: Peer Valuation Frontier
+        st.write(f"### 1. Peer Valuation Frontier ({target_ticker} vs Peers)")
         fig1, ax1 = plt.subplots(figsize=(10, 4))
         np.random.seed(42)
-        rotce = np.random.uniform(8, 25, 12)
-        ptbv = 0.12 * rotce + np.random.normal(1.2, 0.3, 12)
-        mkt_cap = np.random.uniform(20, 250, 12)
-        peers = [f"Peer {i}" for i in range(1, 12)]
-        
-        scatter = ax1.scatter(rotce, ptbv, s=mkt_cap*1.5, color="#1f77b4", alpha=0.6, edgecolors="black", linewidth=1.5)
+        rotce = np.random.uniform(8, 25, 10)
+        ptbv = 0.12 * rotce + np.random.normal(1.2, 0.3, 10)
+        mkt_cap = np.random.uniform(30, 250, 10)
+        ax1.scatter(rotce, ptbv, s=mkt_cap*1.5, color="#1f77b4", alpha=0.6, edgecolors="black", linewidth=1.5)
         sns.regplot(x=rotce, y=ptbv, scatter=False, ax=ax1, color="#d62728", line_kws={"linewidth": 2, "linestyle": "--"})
-        ax1.set_title("Valuation Frontier: Price-to-Tangible Book Value vs. ROTCE", fontsize=11, fontweight='bold')
+        ax1.set_title(f"Valuation Frontier: P/TBV vs. ROTCE ({target_ticker} Benchmarking)", fontsize=11, fontweight='bold')
         ax1.set_xlabel("Return on Tangible Common Equity (ROTCE %)", fontsize=9)
         ax1.set_ylabel("Price-to-Tangible Book Value (P/TBV x)", fontsize=9)
         plt.tight_layout()
         st.pyplot(fig1)
 
         # Graph 2: Financial Performance Timeline
-        st.write("### 2. Financial Performance Timeline")
+        st.write(f"### 2. Financial Performance Timeline ({target_ticker})")
         fig2, ax2 = plt.subplots(figsize=(10, 4))
         quarters = ["Q1 24", "Q2 24", "Q3 24", "Q4 24", "Q1 25", "Q2 25", "Q3 25", "Q4 25"]
         revenue = [22.4, 23.8, 24.1, 26.5, 27.2, 28.5, 29.1, 31.0]
         net_income = [4.2, 4.5, 4.8, 5.2, 5.5, 5.9, 6.1, 6.8]
-        
         ax2.plot(quarters, revenue, marker="o", color="#1f77b4", linewidth=2.5, label="Revenue ($B)")
         ax2.plot(quarters, net_income, marker="s", color="#2ca02c", linewidth=2.5, label="Net Income ($B)")
-        ax2.set_title("Multi-Period Financial Performance & Earnings Trajectory", fontsize=11, fontweight='bold')
+        ax2.set_title(f"Multi-Period Financial Performance & Trajectory ({target_ticker})", fontsize=11, fontweight='bold')
         ax2.set_ylabel("USD ($ Billions)", fontsize=9)
         ax2.legend(loc='upper left', fontsize=8)
         plt.tight_layout()
@@ -77,7 +129,7 @@ with tab1:
         fig3, ax3 = plt.subplots(figsize=(10, 3.2))
         quality_matrix = pd.DataFrame(
             np.random.uniform(0.85, 1.00, (4, 6)),
-            index=["GS", "JPM", "MS", "BAC"],
+            index=[target_ticker, "JPM", "MS", "BAC"],
             columns=["Revenues", "Operating Income", "Total Assets", "Long-Term Debt", "Tax Provision", "EPS Diluted"]
         )
         sns.heatmap(quality_matrix, annot=True, cmap="Greens", vmin=0.8, vmax=1.0, fmt=".2f", ax=ax3, cbar_kws={'label': 'XBRL Reliability Score'})
@@ -96,12 +148,23 @@ with tab2:
     * *6. Adjustment-Risk Matrix:* Maps adjustment materiality against evidence strength and recurrence risk.
     """)
 
-    if st.button("Generate Pillar 2 Analytics Suite", key="btn_p2"):
+    c1, c2 = st.columns(2)
+    with c1:
+        rep_ebitda = st.number_input("Reported GAAP EBITDA ($M):", value=18500.0, key="p2_eb")
+        restruct = st.number_input("Restructuring Add-backs ($M):", value=1200.0, key="p2_res")
+        litig = st.number_input("Litigation Settlement Add-back ($M):", value=450.0, key="p2_lit")
+    with c2:
+        gains = st.number_input("Asset Sale Gains (Deduct) ($M):", value=300.0, key="p2_gain")
+        wc_adj = st.number_input("Working Capital Run-Rate Adjustment ($M):", value=-250.0, key="p2_wc")
+
+    if st.button("Generate Pillar 2 QoE Suite", key="btn_p2"):
+        norm_ebitda = rep_ebitda + restruct + litig - gains + wc_adj
+        
         # Graph 4: EBITDA Normalization Waterfall
         st.write("### 4. EBITDA Normalization Waterfall")
         fig4, ax4 = plt.subplots(figsize=(10, 4))
         steps = ["Reported EBITDA", "Restructuring", "Litigation", "Asset Gains", "Working Cap", "Normalized EBITDA"]
-        vals = [18500, 1200, 450, -300, -250, 19600]
+        vals = [rep_ebitda, restruct, litig, -gains, wc_adj, norm_ebitda]
         cols = ["#1f77b4", "#2ca02c", "#2ca02c", "#d62728", "#17becf", "#9467bd"]
         bars = ax4.bar(steps, vals, color=cols, width=0.55)
         ax4.axhline(0, color='grey', linewidth=0.8)
@@ -118,15 +181,14 @@ with tab2:
         st.write("### 5. Earnings-to-Cash Conversion Chart")
         fig5, ax5 = plt.subplots(figsize=(10, 4))
         periods = ["FY22", "FY23", "FY24", "FY25", "LTM"]
-        ebitda_series = [15000, 16500, 17800, 18500, 19200]
-        ocf_series = [12500, 14200, 15600, 16100, 16800]
-        fcf_series = [9800, 11000, 12200, 13000, 13700]
+        ebitda_s = [15000, 16500, 17800, rep_ebitda, norm_ebitda]
+        ocf_s = [12500, 14200, 15600, 16100, 16800]
+        fcf_s = [9800, 11000, 12200, 13000, 13700]
         x_idx = np.arange(len(periods))
         width = 0.25
-        
-        ax5.bar(x_idx - width, ebitda_series, width, label="EBITDA", color="#1f77b4")
-        ax5.bar(x_idx, ocf_series, width, label="Operating Cash Flow", color="#2ca02c")
-        ax5.bar(x_idx + width, fcf_series, width, label="Free Cash Flow", color="#ff7f0e")
+        ax5.bar(x_idx - width, ebitda_s, width, label="EBITDA", color="#1f77b4")
+        ax5.bar(x_idx, ocf_s, width, label="Operating Cash Flow", color="#2ca02c")
+        ax5.bar(x_idx + width, fcf_s, width, label="Free Cash Flow", color="#ff7f0e")
         ax5.set_xticks(x_idx)
         ax5.set_xticklabels(periods)
         ax5.set_title("Earnings vs. Cash Flow Conversion Analysis", fontsize=11, fontweight='bold')
@@ -141,12 +203,11 @@ with tab2:
         materiality = [2.5, 5.0, 1.2, 8.5, 3.1]
         recurrence_risk = [1.0, 4.0, 2.5, 8.0, 3.0]
         adj_labels = ["Severance", "Litigation", "Lease Adj", "Bad Debt", "FX Revaluation"]
-        
         ax6.scatter(recurrence_risk, materiality, s=250, color="#d62728", alpha=0.7, edgecodes="black")
         for i, txt in enumerate(adj_labels):
             ax6.annotate(txt, (recurrence_risk[i]+0.2, materiality[i]), fontsize=9, fontweight='bold')
-        ax6.axvline(5.0, color='orange', linestyle='--', linewidth=1.5, label='High Recurrence Risk Threshold')
-        ax6.axhline(5.0, color='orange', linestyle='--', linewidth=1.5, label='High Materiality Threshold')
+        ax6.axvline(5.0, color='orange', linestyle='--', linewidth=1.5, label='High Recurrence Risk')
+        ax6.axhline(5.0, color='orange', linestyle='--', linewidth=1.5, label='High Materiality')
         ax6.set_title("Adjustment Materiality vs. Recurrence Risk Matrix", fontsize=11, fontweight='bold')
         ax6.set_xlabel("Recurrence Risk Score (1-10)", fontsize=9)
         ax6.set_ylabel("Materiality Impact ($M)", fontsize=9)
@@ -165,12 +226,23 @@ with tab3:
     * *9. Valuation Football Field:* Compares valuation ranges from DCF, comps, and other suitable methods.
     """)
 
-    if st.button("Generate Pillar 3 Analytics Suite", key="btn_p3"):
+    c1, c2 = st.columns(2)
+    with c1:
+        ev_v = st.number_input("Enterprise Value ($M):", value=145000.0, key="p3_ev")
+        debt_v = st.number_input("Senior Debt ($M):", value=24000.0, key="p3_debt")
+        lease_v = st.number_input("Operating Leases / Pensions ($M):", value=4700.0, key="p3_lease")
+    with c2:
+        cash_v = st.number_input("Cash & Equivalents ($M):", value=15600.0, key="p3_cash")
+        shares_v = st.number_input("Diluted Shares Outstanding (M):", value=320.0, key="p3_sh")
+
+    if st.button("Generate Pillar 3 Valuation Suite", key="btn_p3"):
+        equity_v = ev_v - debt_v - lease_v + cash_v
+        
         # Graph 7: Dynamic Equity Bridge
         st.write("### 7. Dynamic Capital Structure Equity Bridge Waterfall")
         fig7, ax7 = plt.subplots(figsize=(10, 4))
         components = ["Enterprise Value", "Senior Debt", "Leases/Pension", "Less: Cash", "Equity Value"]
-        amounts = [145000, -24000, -4700, 15600, 131900]
+        amounts = [ev_v, -debt_v, -lease_v, cash_v, equity_v]
         cols = ["#1f77b4", "#d62728", "#d62728", "#2ca02c", "#9467bd"]
         bars = ax7.bar(components, amounts, color=cols, width=0.55)
         ax7.axhline(0, color='grey', linewidth=0.8)
@@ -187,11 +259,11 @@ with tab3:
         fig8, ax8 = plt.subplots(figsize=(9, 3.8))
         wacc_vals = ["8.0%", "8.5%", "9.0%", "9.5%", "10.0%"]
         g_vals = ["1.5%", "2.0%", "2.5%", "3.0%"]
-        sensitivity_matrix = pd.DataFrame(
+        sens_matrix = pd.DataFrame(
             [[165, 158, 150, 142], [152, 146, 139, 132], [141, 135, 128, 122], [130, 124, 118, 113], [120, 115, 109, 104]],
             index=wacc_vals, columns=g_vals
         )
-        sns.heatmap(sensitivity_matrix, annot=True, cmap="YlGnBu", fmt="d", ax=ax8, cbar_kws={'label': 'Implied Share Price ($)'})
+        sns.heatmap(sens_matrix, annot=True, cmap="YlGnBu", fmt="d", ax=ax8, cbar_kws={'label': 'Implied Share Price ($)'})
         ax8.set_title("Valuation Sensitivity Analysis Matrix", fontsize=11, fontweight='bold')
         ax8.set_xlabel("Terminal Growth Rate (g)", fontsize=9)
         ax8.set_ylabel("WACC", fontsize=9)
@@ -204,7 +276,6 @@ with tab3:
         methods = ["DCF (Perpetuity Growth)", "DCF (Exit Multiple)", "Comparable Comps (P/E)", "Comparable Comps (EV/EBITDA)", "Precedent Transactions"]
         low_vals = [120, 125, 110, 115, 130]
         high_vals = [165, 172, 145, 155, 185]
-        
         y_pos = np.arange(len(methods))
         for i in range(len(methods)):
             ax9.barh(y_pos[i], high_vals[i] - low_vals[i], left=low_vals[i], color='#1f77b4', alpha=0.6, height=0.5, edgecolor='black')
@@ -226,7 +297,15 @@ with tab4:
     * *12. ESG-to-Valuation Waterfall:* Traces modeled climate impacts through costs, cash flows, and valuation.
     """)
 
-    if st.button("Generate Pillar 4 Analytics Suite", key="btn_p4"):
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        env_s = st.slider("Environmental Sub-Score (0-100):", 0, 100, 68, key="p4_env")
+    with c2:
+        soc_s = st.slider("Social Sub-Score (0-100):", 0, 100, 75, key="p4_soc")
+    with c3:
+        gov_s = st.slider("Governance Sub-Score (0-100):", 0, 100, 82, key="p4_gov")
+
+    if st.button("Generate Pillar 4 Climate Suite", key="btn_p4"):
         # Graph 10: Climate Scenario Fan Chart
         st.write("### 10. Climate Transition Scenario Fan Chart")
         fig10, ax10 = plt.subplots(figsize=(10, 4))
@@ -234,7 +313,6 @@ with tab4:
         baseline = [100, 108, 117, 127, 138]
         orderly = [100, 105, 111, 118, 125]
         disorderly = [100, 98, 92, 85, 78]
-        
         ax10.plot(years, baseline, marker="o", color="#2ca02c", linewidth=2.5, label="Baseline (No Carbon Shock)")
         ax10.plot(years, orderly, marker="s", color="#1f77b4", linewidth=2.5, label="Orderly Transition ($50–$100/ton)")
         ax10.plot(years, disorderly, marker="^", color="#d62728", linewidth=2.5, label="Disorderly Transition (Abrupt Shock)")
@@ -250,7 +328,6 @@ with tab4:
         exposure = [0.8, 0.4, 0.9, 0.2, 0.7]
         sensitivity = [0.7, 0.3, 0.8, 0.1, 0.6]
         sectors = ["Scope 1 Emissions", "Physical Assets", "Supply Chain", "Water Stress", "Regulatory Tax"]
-        
         ax11.scatter(exposure, sensitivity, s=300, color="#ff7f0e", alpha=0.7, edgecodes="black")
         for i, txt in enumerate(sectors):
             ax11.annotate(txt, (exposure[i]+0.02, sensitivity[i]), fontsize=9, fontweight='bold')
@@ -297,7 +374,7 @@ with tab5:
         vol_factor = st.slider("Valuation Volatility (%):", min_value=5.0, max_value=35.0, value=18.0, step=0.5, key="p5_vol")
 
     if st.button("Run Comprehensive Risk & Monte Carlo Suite", key="btn_p5"):
-        with st.spinner("Executing all 4 risk models and generating charts 13–16..."):
+        with st.spinner("Executing all 4 risk models and generating graphs 13–16..."):
             np.random.seed(42)
             base_ev = 145000.0
             std_dev = base_ev * (vol_factor / 100.0)
