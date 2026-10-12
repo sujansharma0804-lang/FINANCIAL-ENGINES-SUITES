@@ -17,19 +17,19 @@ plt.style.use('seaborn-v0_8-darkgrid' if 'seaborn-v0_8-darkgrid' in plt.style.av
 
 # App Title & Header
 st.title("Institutional Financial Analytics Suite")
-st.markdown("### Universal Multi-Engine Workspace: Calculated Financial Statements, LTM Walk, EV Bridge, ESG Curves, and Stochastic Monte Carlo")
+st.markdown("### Universal Multi-Engine Workspace: SEC Statements, LTM Calendarizer, EV Bridge, Elite ESG Analytics, and Stochastic Monte Carlo")
 
 # Navigation Tabs (All 5 with Sophisticated Graphs)
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🔍 SEC EDGAR Pipeline", 
     "📅 LTM Calendarizer", 
     "🌉 EV Bridge Model", 
-    "🌱 ESG Engine", 
+    "🌱 Elite ESG Engine", 
     "🎲 Monte Carlo Risk"
 ])
 
 # ==========================================
-# TAB 1: SEC EDGAR PIPELINE (WITH CALCULATED FINANCIAL GRAPH)
+# TAB 1: SEC EDGAR PIPELINE
 # ==========================================
 with tab1:
     st.subheader("Universal SEC EDGAR Financial Statement Ingestion & Visualizer")
@@ -87,7 +87,6 @@ with tab1:
                             if not df_plot.empty:
                                 st.write(f"### Historical Financial Performance: {target_name}")
                                 
-                                # Sophisticated Graph for SEC Data
                                 fig_sec, ax_sec = plt.subplots(figsize=(10, 4.5))
                                 sns.lineplot(data=df_plot, x="Fiscal Year", y="Value ($M)", hue="Metric", marker="o", linewidth=2.5, ax=ax_sec)
                                 ax_sec.set_title(f"Annual Financial Trajectory ({target_name})", fontsize=11, fontweight='bold')
@@ -110,7 +109,7 @@ with tab1:
                 st.error(f"An error occurred: {e}")
 
 # ==========================================
-# TAB 2: LTM CALENDARIZER (WITH CALCULATED GRAPH)
+# TAB 2: LTM CALENDARIZER
 # ==========================================
 with tab2:
     st.subheader("Last Twelve Months (LTM) Calendarizer & Component Graph")
@@ -128,7 +127,6 @@ with tab2:
         ltm_result = latest_fy_rev + interim_current_y - interim_prior_y
         st.success(f"*Calculated Normalized LTM Run-Rate:* ${ltm_result:,.2f}M")
         
-        # Sophisticated LTM Contribution Graph
         fig_ltm, ax_ltm = plt.subplots(figsize=(10, 4))
         components = ["Latest Full Year", "Current Interim YTD", "Less: Prior Interim", "Normalized LTM"]
         values = [latest_fy_rev, interim_current_y, -interim_prior_y, ltm_result]
@@ -139,7 +137,6 @@ with tab2:
         ax_ltm.set_title("LTM Calendarization Walk & Contribution", fontsize=11, fontweight='bold')
         ax_ltm.set_ylabel("USD ($ Millions)", fontsize=10)
         
-        # Add value labels on bars
         for bar in bars:
             height = bar.get_height()
             ax_ltm.annotate(f'${height:,.0f}M',
@@ -151,7 +148,7 @@ with tab2:
         st.pyplot(fig_ltm)
 
 # ==========================================
-# TAB 3: EV BRIDGE MODEL (WITH CALCULATED WATERFALL GRAPH)
+# TAB 3: EV BRIDGE MODEL
 # ==========================================
 with tab3:
     st.subheader("Enterprise Value to Equity Value Bridge & Capital Structure Graph")
@@ -174,7 +171,6 @@ with tab3:
         col_m1.metric("Implied Equity Value", f"${equity_value:,.2f}M")
         col_m2.metric("Implied Share Price", f"${implied_share_price:,.2f}")
 
-        # Sophisticated EV Bridge Bar Graph
         fig_bridge, ax_bridge = plt.subplots(figsize=(10, 4.5))
         bridge_labels = ["Enterprise Value", "Less: Debt", "Less: Preferred", "Plus: Cash", "Equity Value"]
         bridge_vals = [ev_input, -total_debt, -preferred_stock, cash_equiv, equity_value]
@@ -195,41 +191,89 @@ with tab3:
         st.pyplot(fig_bridge)
 
 # ==========================================
-# TAB 4: ESG ENGINE (WITH CALCULATED WACC CURVE GRAPH)
+# TAB 4: ELITE ESG & CLIMATE ENGINE (WITH 3 SOPHISTICATED ESG GRAPHS)
 # ==========================================
 with tab4:
-    st.subheader("ESG Risk & Cost of Capital Penalty Engine")
-    st.write("Quantify carbon liability pricing and dynamically plot the WACC adjustment curve.")
+    st.subheader("Elite ESG Risk, DCF Valuation Impact & Carbon Transition Engine")
+    st.write("Advanced institutional climate stress-testing featuring multi-factor ESG scoring, intrinsic DCF haircuts, and carbon tax escalation forecasting.")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        emissions_slider = st.slider("Scope 1 & 2 Emissions (kt CO2e):", min_value=10, max_value=500, value=180, key="esg_slider")
-        current_penalty = 0.045 * np.log(emissions_slider) * 100
-        st.metric("Calculated ESG Capital Penalty", f"+{current_penalty:.1f} bps", delta="-2.1%")
-    with col2:
-        st.metric("Governance Scorecard", "A- (Tier 1)", delta="+0.4")
-        st.progress(0.82, text="ESG Compliance Rating")
+    # Control Panel for ESG Inputs
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        env_score = st.slider("Environmental Sub-Score (0-100):", 0, 100, 68)
+    with c2:
+        soc_score = st.slider("Social Sub-Score (0-100):", 0, 100, 75)
+    with c3:
+        gov_score = st.slider("Governance Sub-Score (0-100):", 0, 100, 82)
+
+    # Weighted ESG Score Calculation
+    composite_esg = (env_score * 0.40) + (soc_score * 0.30) + (gov_score * 0.30)
+    wacc_penalty_bps = max(0, (80 - composite_esg) * 0.75) # Penalty if score is below 80
 
     st.markdown("---")
-    st.markdown("### Calculated WACC Penalty vs. Carbon Intensity Curve")
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Composite ESG Score", f"{composite_esg:.1f} / 100", delta=f"{composite_esg - 75:+.1f} vs Benchmark")
+    m2.metric("Calculated WACC Penalty", f"+{wacc_penalty_bps:.1f} bps", delta="-0.3% Cost of Capital Impact")
+    m3.metric("Intrinsic Share Price Haircut", f"-${(wacc_penalty_bps * 1.8):.2f}", delta="DCF Valuation Impact")
+
+    st.markdown("---")
+    st.write("### Graph 1: Multi-Factor ESG Pillar Scorecard Breakdown")
+    fig_esg1, ax_esg1 = plt.subplots(figsize=(10, 3.5))
+    pillars = ["Environmental (40%)", "Social (30%)", "Governance (30%)", "Composite Score"]
+    scores = [env_score, soc_score, gov_score, composite_esg]
+    bar_cols = ["#2ca02c", "#1f77b4", "#ff7f0e", "#9467bd"]
     
-    fig_esg, ax_esg = plt.subplots(figsize=(10, 4))
-    emissions_range = np.linspace(10, 500, 50)
-    wacc_penalty_curve = 0.045 * np.log(emissions_range) * 100
-    
-    ax_esg.plot(emissions_range, wacc_penalty_curve, color="#2ca02c", linewidth=2.5, label="WACC Penalty Spread (bps)")
-    ax_esg.axvline(emissions_slider, color='orange', linestyle='--', linewidth=2, label=f'Selected Level ({emissions_slider} kt: +{current_penalty:.1f} bps)')
-    ax_esg.scatter([emissions_slider], [current_penalty], color='orange', s=80, zorder=5)
-    
-    ax_esg.set_title("Carbon Footprint Impact Curve on Cost of Capital", fontsize=11, fontweight='bold')
-    ax_esg.set_xlabel("Scope 1 & 2 Emissions (kt CO2e)", fontsize=9)
-    ax_esg.set_ylabel("WACC Adjustment (Basis Points)", fontsize=9)
-    ax_esg.legend(loc='upper left')
+    b1 = ax_esg1.barh(pillars, scores, color=bar_cols, height=0.55)
+    ax_esg1.set_xlim(0, 100)
+    ax_esg1.set_xlabel("Score (0-100 Scale)", fontsize=9)
+    ax_esg1.set_title("Institutional ESG Pillar Weighting & Evaluation", fontsize=11, fontweight='bold')
+    for bar in b1:
+        w = bar.get_width()
+        ax_esg1.annotate(f'{w:.1f}', xy=(w + 1, bar.get_y() + bar.get_height()/2),
+                         va='center', fontsize=9, fontweight='bold')
     plt.tight_layout()
-    st.pyplot(fig_esg)
+    st.pyplot(fig_esg1)
+
+    st.write("### Graph 2: Intrinsic DCF Valuation & WACC Penalty Impact Curve")
+    fig_esg2, ax_esg2 = plt.subplots(figsize=(10, 4))
+    emissions_range = np.linspace(50, 500, 50)
+    wacc_curve = 0.045 * np.log(emissions_range) * 100
+    
+    ax_esg2.plot(emissions_range, wacc_curve, color="#d62728", linewidth=2.5, label="WACC Penalty Spread (bps)")
+    current_emissions = 200
+    current_pen = 0.045 * np.log(current_emissions) * 100
+    ax_esg2.axvline(current_emissions, color='orange', linestyle='--', linewidth=2, label=f'Portfolio Emission Baseline ({current_emissions} kt)')
+    ax_esg2.scatter([current_emissions], [current_pen], color='orange', s=80, zorder=5)
+    
+    ax_esg2.set_title("Carbon Intensity vs. Cost of Capital Penalty", fontsize=11, fontweight='bold')
+    ax_esg2.set_xlabel("Scope 1 & 2 Emissions (kt CO2e)", fontsize=9)
+    ax_esg2.set_ylabel("WACC Adjustment (Basis Points)", fontsize=9)
+    ax_esg2.legend(loc='upper left')
+    plt.tight_layout()
+    st.pyplot(fig_esg2)
+
+    st.write("### Graph 3: Carbon Tax Transition Risk & EPS Dilution Forecast (2026–2030)")
+    fig_esg3, ax_esg3 = plt.subplots(figsize=(10, 4))
+    years = [2026, 2027, 2028, 2029, 2030]
+    carbon_price_per_ton = [50, 75, 100, 125, 150] # Escalating carbon tax simulation
+    eps_impact_pct = [-1.2, -2.1, -3.5, -5.0, -7.2] # Cumulative EPS dilution
+    
+    ax_esg3.plot(years, carbon_price_per_ton, color="#1f77b4", marker="s", linewidth=2, label="Assumed Carbon Tax ($/ton)")
+    ax_esg3.set_ylabel("Carbon Price ($/ton)", color="#1f77b4", fontsize=10)
+    ax_esg3.tick_params(axis='y', labelcolor="#1f77b4")
+    
+    ax_esg3_twin = ax_esg3.twinx()
+    ax_esg3_twin.plot(years, eps_impact_pct, color="#d62728", marker="o", linewidth=2.5, linestyle="--", label="Projected EPS Dilution (%)")
+    ax_esg3_twin.set_ylabel("Cumulative EPS Impact (%)", color="#d62728", fontsize=10)
+    ax_esg3_twin.tick_params(axis='y', labelcolor="#d62728")
+    
+    ax_esg3.set_title("Multi-Year Carbon Tax Escalation & Earnings Dilution Stress Test", fontsize=11, fontweight='bold')
+    ax_esg3.set_xlabel("Forecast Year", fontsize=10)
+    plt.tight_layout()
+    st.pyplot(fig_esg3)
 
 # ==========================================
-# TAB 5: MONTE CARLO RISK (WITH CALCULATED STOCHASTIC DISTRIBUTION GRAPH)
+# TAB 5: MONTE CARLO RISK
 # ==========================================
 with tab5:
     st.subheader("Probabilistic Monte Carlo Stress Testing & Distribution Graph")
@@ -255,7 +299,6 @@ with tab5:
             col2.metric("P50 Median Valuation", f"${p50:,.2f}M", delta="Base Case")
             col3.metric("P90 Bull Case", f"${p90:,.2f}M", delta="+50.6%")
 
-            # Sophisticated Monte Carlo Probability Density Graph
             fig_mc, ax_mc = plt.subplots(figsize=(10, 4.5))
             sns.histplot(ev_array, kde=True, color="#1f77b4", bins=50, stat="density", ax=ax_mc, alpha=0.6)
             ax_mc.axvline(p10, color='red', linestyle='--', linewidth=2, label=f'P10 Bear: ${p10:,.1f}M')
