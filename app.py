@@ -76,7 +76,7 @@ with tab1:
                                 for tag in ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "InterestAndDividendIncomeOperating"]:
                                     if tag in us_gaap:
                                         units = us_gaap[tag].get("units", {}).get("USD", [])
-                                        annuals = [e.get("val", 0) for e in units if e.get("form"] == "10-K"]
+                                        annuals = [e.get("val", 0) for e in units if e.get("form") == "10-K"]
                                         if annuals:
                                             latest_rev = round(annuals[-1] / 1e6, 2)
                                             break
@@ -122,7 +122,7 @@ with tab1:
 with tab2:
     st.subheader("Pillar 2: LTM Calendarizer & Quality of Earnings (QoE) Engine")
     st.markdown("""
-    * *Criticism Addressed:* Moves beyond naive LTM math ($FY + YTD_{curr} - YTD_{prior}$) by stripping out seasonality distortions and non-operating noise.
+    * *Criticism Addressed:* Moves beyond naive LTM math by stripping out seasonality distortions and non-operating noise.
     * *Advanced Analytical Improvement:* Combines LTM calendarization with professional QoE add-backs (restructuring, litigation, and working capital run-rate shifts) to isolate true core cash generation.
     """)
 
@@ -215,7 +215,7 @@ with tab3:
         st.pyplot(fig_p3)
 
 # ==========================================
-# PILLAR 4: ELITE ESG & CLIMATE ENGINE (WITH 3 SOPHISTICATED GRAPHS)
+# PILLAR 4: ELITE ESG & CLIMATE ENGINE
 # ==========================================
 with tab4:
     st.subheader("Pillar 4: Elite ESG Risk, DCF Valuation Impact & Carbon Transition Engine")
