@@ -5,13 +5,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import requests
 
-# Try importing yfinance safely with fallback handling
-try:
-    import yfinance as yf
-    YF_AVAILABLE = True
-except ImportError:
-    YF_AVAILABLE = False
-
 # Page Configuration
 st.set_page_config(
     page_title="Institutional Financial Analytics Suite",
@@ -24,11 +17,11 @@ plt.style.use('seaborn-v0_8-darkgrid' if 'seaborn-v0_8-darkgrid' in plt.style.av
 
 # App Title & Header
 st.title("Institutional Financial Analytics Suite")
-st.markdown("### Top-1% Quantitative Workspace: Automated Comps, QoE Normalization, Advanced EV Bridge, Elite ESG Climate Stress-Testing, and Correlated Monte Carlo Risk")
+st.markdown("### Top-1% Quantitative Workspace: SEC Peer Benchmarking, QoE Normalization, Advanced EV Bridge, Elite ESG Climate Stress-Testing, and Correlated Monte Carlo Risk")
 
 # Navigation Tabs (All 5 Advanced Pillars)
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "🔍 1. Automated Comps & SEC Pipeline", 
+    "🔍 1. SEC Peer Comps & Pipeline", 
     "📊 2. Quality of Earnings (QoE)", 
     "🌉 3. Advanced Capital Structure Bridge", 
     "🌱 4. Elite ESG & Climate Engine", 
@@ -36,11 +29,11 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 ])
 
 # ==========================================
-# TAB 1: AUTOMATED COMPS & SEC PIPELINE
+# TAB 1: SEC PEER COMPS & PIPELINE
 # ==========================================
 with tab1:
-    st.subheader("Automated Relative Valuation & Peer Benchmarking Comps Engine")
-    st.write("Merge live market price multiples with official SEC EDGAR financial statements to benchmark target entities against direct industry peers.")
+    st.subheader("SEC EDGAR Peer Benchmarking & Financial Pipeline")
+    st.write("Query official XBRL filings directly from the SEC database for a target entity and industry peers.")
 
     col_i1, col_i2 = st.columns(2)
     with col_i1:
@@ -48,44 +41,70 @@ with tab1:
     with col_i2:
         peer_tickers_input = st.text_input("Peer Group Tickers (comma-separated):", value="MS, JPM, BAC, C", key="comps_peers")
 
-    if st.button("Execute Automated Comps & SEC Pipeline", key="btn_comps"):
-        with st.spinner(f"Fetching live market data and benchmarking multiples for {target_ticker}..."):
+    if st.button("Execute SEC Peer Benchmarking Pipeline", key="btn_comps"):
+        with st.spinner(f"Querying SEC EDGAR database for {target_ticker} and peer group..."):
             try:
-                if YF_AVAILABLE:
-                    peers = [p.strip().upper() for p in peer_tickers_input.split(",")]
-                    all_tickers = [target_ticker] + peers
+                headers = {'User-Agent': 'InstitutionalFinancialAnalytics student@christuniversity.in'}
+                tickers_url = "https://www.sec.gov/files/company_tickers.json"
+                tickers_resp = requests.get(tickers_url, headers=headers, timeout=10)
+                
+                if tickers_resp.status_code == 200:
+                    tickers_data = tickers_resp.json()
+                    all_tickers = [target_ticker] + [p.strip().upper() for p in peer_tickers_input.split(",")]
                     
-                    comps_data = []
+                    peer_rows = []
                     for t in all_tickers:
-                        tk = yf.Ticker(t)
-                        info = tk.info
-                        comps_data.append({
-                            "Ticker": t,
-                            "Company Name": info.get("shortName", t),
-                            "Market Cap ($B)": round(info.get("marketCap", 0) / 1e9, 2),
-                            "P/E Ratio": info.get("trailingPE", np.nan),
-                            "EV/EBITDA": info.get("enterpriseToEbitda", np.nan),
-                            "EV/Revenue": info.get("enterpriseToRevenue", np.nan),
-                            "Profit Margin (%)": round(info.get("profitMargins", 0) * 100, 2) if info.get("profitMargins") else np.nan
-                        })
+                        target_cik = None
+                        target_name = t
+                        for key, val in tickers_data.items():
+                            if val.get("ticker") == t:
+                                target_cik = str(val.get("cik_str")).zfill(10)
+                                target_name = val.get("title")
+                                break
+                        
+                        if target_cik:
+                            facts_url = f"https://data.sec.gov/api/xbrl/companyfacts/CIK{target_cik}.json"
+                            f_resp = requests.get(facts_url, headers=headers, timeout=10)
+                            if f_resp.status_code == 200:
+                                f_data = f_resp.json()
+                                us_gaap = f_data.get("facts", {}).get("us-gaap", {})
+                                
+                                # Extract latest available revenue
+                                latest_rev = 0.0
+                                for tag in ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet", "InterestAndDividendIncomeOperating"]:
+                                    if tag in us_gaap:
+                                        units = us_gaap[tag].get("units", {}).get("USD", [])
+                                        annuals = [e.get("val", 0) for e in units if e.get("form") == "10-K"]
+                                        if annuals:
+                                            latest_rev = round(annuals[-1] / 1e6, 2)
+                                            break
+                                
+                                peer_rows.append({
+                                    "Ticker": t,
+                                    "Company Name": target_name,
+                                    "CIK": target_cik,
+                                    "Latest Annual Revenue ($M)": latest_rev
+                                })
                     
-                    df_comps = pd.DataFrame(comps_data)
-                    st.success(f"Successfully generated peer comparison matrix for *{target_ticker}* and peer set!")
-                    st.dataframe(df_comps, use_container_width=True)
+                    if peer_rows:
+                        df_peers = pd.DataFrame(peer_rows)
+                        st.success("Successfully parsed official SEC filing data for peer group!")
+                        st.dataframe(df_peers, use_container_width=True)
 
-                    # Sophisticated Comps Multiple Bar Chart
-                    fig_c, ax_c = plt.subplots(figsize=(10, 4.5))
-                    df_melted = df_comps.melt(id_vars=["Ticker"], value_vars=["P/E Ratio", "EV/EBITDA"], var_name="Multiple Type", value_name="Multiple Value")
-                    sns.barplot(data=df_melted, x="Ticker", y="Multiple Value", hue="Multiple Type", ax=ax_c, palette="muted")
-                    ax_c.set_title("Peer Group Relative Valuation Multiples Benchmark", fontsize=11, fontweight='bold')
-                    ax_c.set_xlabel("Company Ticker", fontsize=10)
-                    ax_c.set_ylabel("Valuation Multiple (x)", fontsize=10)
-                    plt.tight_layout()
-                    st.pyplot(fig_c)
+                        # Sophisticated SEC Peer Revenue Comparison Chart
+                        fig_c, ax_c = plt.subplots(figsize=(10, 4.5))
+                        sns.barplot(data=df_peers, x="Ticker", y="Latest Annual Revenue ($M)", ax=ax_c, palette="Blues_d")
+                        ax_c.set_title("Peer Group Annual Revenue Benchmarking (SEC EDGAR)", fontsize=11, fontweight='bold')
+                        ax_c.set_xlabel("Company Ticker", fontsize=10)
+                        ax_c.set_ylabel("Latest Annual Revenue ($ Millions)", fontsize=10)
+                        plt.tight_layout()
+                        st.pyplot(fig_c)
+                    else:
+                        st.warning("Could not resolve peer tickers in SEC database.")
                 else:
-                    st.warning("yfinance library is not installed in the current python runtime. Please ensure yfinance is added to your requirements.txt for live market comps.")
+                    st.error("Failed to connect to SEC ticker directory.")
             except Exception as e:
-                st.error(f"Error executing automated comps: {e}")
+                st.error(f"Error querying SEC EDGAR: {e}")
 
 # ==========================================
 # TAB 2: QUALITY OF EARNINGS (QoE) ENGINE
@@ -112,7 +131,6 @@ with tab2:
         m2.metric("Normalized Run-Rate EBITDA", f"${normalized_ebitda:,.2f}M", delta=f"{normalized_ebitda - reported_ebitda:+,.2f}M")
         m3.metric("QoE Quality Index", f"{qoe_conversion:.1f}%", delta="High Quality" if qoe_conversion >= 95 else "Sub-optimal")
 
-        # QoE Bridge Waterfall Chart
         fig_qoe, ax_qoe = plt.subplots(figsize=(10, 4.5))
         steps = ["Reported EBITDA", "Restructuring", "Litigation", "Asset Gains", "Working Cap", "Normalized EBITDA"]
         vals = [reported_ebitda, restructuring_addback, litigation_addback, -non_operating_gains, working_cap_adjustment, normalized_ebitda]
@@ -161,7 +179,6 @@ with tab3:
         m1.metric("Implied Total Equity Value", f"${equity_val:,.2f}M")
         m2.metric("Implied Fully Diluted Share Price", f"${implied_share_px:,.2f}")
 
-        # Capital Structure Bridge Waterfall
         fig_bs, ax_bs = plt.subplots(figsize=(10, 4.5))
         components = ["Enterprise Value", "Senior Debt", "Leases / Pension", "Less: Cash", "Equity Value"]
         amounts = [ev_val, -senior_debt, -(operating_leases + pension_liability), cash_equivs, equity_val]
@@ -280,11 +297,9 @@ with tab5:
             base_ev = 145000.0
             std_dev = base_ev * (volatility_factor / 100.0)
             
-            # Correlated random draw simulation
             ev_array = np.random.normal(base_ev, std_dev, num_iterations)
             p10, p50, p90 = np.percentile(ev_array, 10), np.percentile(ev_array, 50), np.percentile(ev_array, 90)
             
-            # Tail-risk VaR & CVaR (5% level)
             var_95 = np.percentile(ev_array, 5)
             cvar_95 = ev_array[ev_array <= var_95].mean()
             prob_loss = (np.sum(ev_array < base_ev) / num_iterations) * 100
@@ -295,11 +310,9 @@ with tab5:
             col3.metric("95% VaR (Tail Risk)", f"${var_95:,.2f}M")
             col4.metric("Probability of Loss", f"{prob_loss:.1f}%")
 
-            # Sophisticated Monte Carlo Probability Density & VaR Shading Graph
             fig_mc, ax_mc = plt.subplots(figsize=(10, 4.5))
             sns.histplot(ev_array, kde=True, color="#1f77b4", bins=60, stat="density", ax=ax_mc, alpha=0.6)
             
-            # Shading Tail Risk (VaR 95%)
             ax_mc.axvline(var_95, color='darkred', linestyle='--', linewidth=2.5, label=f'95% VaR: ${var_95:,.1f}M')
             ax_mc.axvline(p50, color='green', linestyle='-', linewidth=2.5, label=f'P50 Median: ${p50:,.1f}M')
             ax_mc.axvline(p90, color='purple', linestyle='--', linewidth=2, label=f'P90 Bull: ${p90:,.1f}M')
