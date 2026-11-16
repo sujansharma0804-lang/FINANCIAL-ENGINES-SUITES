@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -299,6 +298,9 @@ if not st.session_state["audit_ledger"] or st.session_state["audit_ledger"][-1][
     if len(st.session_state["audit_ledger"]) > 15:
         st.session_state["audit_ledger"].pop(0)
 
+# =========================================================
+# 6. APP UI & TABS
+# =========================================================
 st.markdown(f"## 🏛️ UNIFIED US-LISTED 10-PILLAR FINANCE & RISK TERMINAL — `{ent['ticker']}`")
 st.markdown(
     f"<div class='pillar-banner'>🔗 <b>LIVE CROSS-PILLAR REACTIVITY ACTIVE:</b> Changing any assumption updates "
