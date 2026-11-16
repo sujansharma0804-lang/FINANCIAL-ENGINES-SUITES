@@ -10,7 +10,7 @@ import io
 # =========================================================
 # 1. PAGE CONFIG & INSTITUTIONAL STYLING
 # =========================================================
-ENGINE_VERSION = "v12.5.0-US-LISTED-10PILLAR"
+ENGINE_VERSION = "v12.6.0-US-LISTED-10PILLAR-ENTERPRISE"
 st.set_page_config(
     page_title="Unified US-Listed 10-Pillar Corporate Finance & Risk Terminal",
     layout="wide",
